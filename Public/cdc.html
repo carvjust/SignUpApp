@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>CDC</title>
+    <link rel="stylesheet" type="text/css" href="styles/index.css">
+</head>
+
+
+<body onload="startLoading()">
+<h1>Select a clipboard</h1>
+
+<label for="selector">
+</label><select id="selector">
+    <option value="SLC1">SLC1</option>
+    <option value="SLC3">SLC3</option>
+    <option value="DUT1">DUT1</option>
+</select><br><br>
+
+<label for="password"></label>
+<input type="text" id="password" placeholder="Password"/><br><br>
+
+<input type="button" onclick="transition('Create');" value="Create"/>
+<input type="button" onclick="transition('Download');" value="Download"/>
+<input type="button" onclick="transition('Close');" value="Close"/>
+</body>
+
+
+<script src="scripts/cdc.js"></script>
+</html>
