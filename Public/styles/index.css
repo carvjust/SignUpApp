@@ -1,0 +1,13 @@
+/**
+ * index.scss
+ * - Add any styles you want here!
+ */
+
+div {
+    width:225px;
+    height:150px;
+}
+
+body {
+    background-color:grey;
+}

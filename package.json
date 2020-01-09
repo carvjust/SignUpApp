@@ -1,0 +1,21 @@
+{
+  "name": "signupbackend",
+  "version": "1.0.0",
+  "description": "Sign up application for Amazon",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "carvjust",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nedb": "^1.8.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": " github.com/15Jman202/SignUpApp"
+  }
+}
