@@ -2,14 +2,14 @@ const express = require('express');
 const DataStore = require('nedb');
 const app = express();
 
-const hostname = 'u3239b235428f5e.ant.amazon.com'; // u3239b235428f5e.ant.amazon.com
-const port = 8000;
+const hostname = ''; // u3239b235428f5e.ant.amazon.com
+const port = 3000;
 
 app.listen(port, hostname, () => {
     console.log('Listening at http://'+hostname+':'+port+'/');
 });
 
-app.use(express.static('public'));
+app.use(express.static(__dirname+'/Public'));
 app.use(express.urlencoded({
     extended: true
 }));
