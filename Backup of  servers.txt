@@ -1,3 +1,4 @@
+default server
 
 server {
         listen 80;
@@ -18,7 +19,7 @@ server {
         }
 }
 
-
+SignUpApp.amazon.com server
 
 server {
         listen 80 default_server;
@@ -32,7 +33,3 @@ server {
              proxy_pass http://u3239b235428f5e.ant.amazon.com:3000;
         }
 }
-
-
-
-
