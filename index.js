@@ -10,9 +10,7 @@ app.listen(port, hostname, () => {
 });
 
 app.use(express.static(__dirname+'/Public'));
-app.use(express.urlencoded({
-    extended: true
-}));
+app.use(express.urlencoded({extended:true}));
 app.use(express.json({limit: '1mb'}));
 
 app.post('/:site/:selectedList/create', (request, response) => {
