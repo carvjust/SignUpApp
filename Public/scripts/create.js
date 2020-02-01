@@ -1,5 +1,6 @@
-let username = document.getElementById("username");
-let listname = document.getElementById("listname");
+let usernameElement = document.getElementById("username");
+let listNameElement = document.getElementById("listname");
+let promptElement = document.getElementById("prompt");
 let site;
 
 function load() {
@@ -10,6 +11,24 @@ function loadSite() {
     site = window.location.href.split('site=')[1];
 }
 
-function createList() {
-    window.alert("Starting creation of list: " + listname.value + " | to site: " + site + " | user: " + username.value.toLowerCase());
+async function submit() {
+    let username = usernameElement.value;
+    let listName = listNameElement.value;
+    let prompt = promptElement.value;
+
+    const options = {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        site: site,
+        username: username,
+        listName: listName,
+        prompt: prompt
+    };
+
+    const url = '/' + site + '/' + listName + '/createList';
+    const response = await fetch(url, options);
+    const promise = await response.text();
+    window.alert(promise);
 }
