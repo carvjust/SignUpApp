@@ -13,68 +13,59 @@ app.use(express.static(__dirname+'/Public'));
 app.use(express.urlencoded({extended:true}));
 app.use(express.json({limit: '1mb'}));
 
-app.post('/:site/:listName/createSite', (request, response) => {
+function respond(response, error, message) {
+    let res = "Submission ";
+    if (error === "") {
+        res += "Successful." + message;
+    } else {
+        res += "Unsuccessful. Please refresh the site and try again.";
+        console.log(error);
+    }
+
+    response.send(res);
+    response.end();
+}
+
+app.post('/:site/createSite', (request, response) => {
     const site = request.params.site;
-    const selectedList = request.params.selectedList;
-    const appliedPath = "api/"+site+"/lists/"+selectedList+"/applied.db";
+
     const sitePath = "api/"+site+"/"+site+".db";
-    const listsPath = "api/"+site+"/lists/"+"lists.db";
-    const selectedListPath = "api/"+site+"/lists/"+selectedList+"/"+selectedList+".db";
     const siteDB = new DataStore({ filename: ''+sitePath, autoload: true });
-    const listsDB = new DataStore({ filename: ''+listsPath, autoload: true });
-    const createdList = new DataStore({ filename: ''+selectedListPath, autoload: true });
-    const appliedDB = new DataStore({ filename: ''+appliedPath, autoload: true });
 
     const timestamp = Date.now();
     const siteInfo = {"siteName": site, "created": timestamp, "createdBy": username};
-    const listInfo = {};
-    console.log("Create list request submitted");
+    console.log("Create site request submitted");
 
     let error = "";
     siteDB.insert(siteInfo, (err, doc) => {
         error = err;
     });
 
-    let res = "Submission ";
-    if (!(site == "") && error == "") {
-        res += "Successful. Created new list: " + listName;
-    } else {
-        res += "Unsuccessful. Please refresh the site and try again.";
-        console.log(error);
-    }
-
-    response.send(res);
-    response.end();
+    respond(response, error, " Created new site: " + site);
 });
 
 
-app.post('/:site/:listName/createList', (request, response) => {
+app.post('/:site/createList', (request, response) => {
     const site = request.params.site;
-    const listName = request.params.listName;
-    const userName = request.params.username;
+    const data = request.body;
+
+    const listName = data.listName;
+    const userName = data.username;
+    const prompt = data.prompt;
 
     const listPath = "api/"+site+"/lists/"+listName+"/"+listName+".db";
-    const listDB = new DataStore({ filename: ''+listPath, autoload: true });
+    const listDB = new DataStore({filename: ''+listPath, autoload: true});
 
     const timestamp = Date.now();
-    const listInfo = {"created": timestamp, "createdBy": userName, isClosed: false, closedBy: ""};
+    const listInfo = {"prompt": prompt, "createdBy": userName, isClosed: false, closedBy: "", "timestamp": timestamp};
     console.log("Create list request submitted");
 
     let error = "";
-    listDB.insert(data, (err, doc) => {
+    listDB.insert(listInfo, (err, doc) => {
         error = err;
     });
 
-    let res = "Submission ";
-    if (!(site == "") && error == "") {
-        res += "Successful. Created new list: " + listName;
-    } else {
-        res += "Unsuccessful. Please refresh the site and try again.";
-        console.log(error);
-    }
-
-    response.send(res);
-    response.end();
+    respond(response, error, " Created new list: " + listName);
 });
 
 app.post('/:site/:selectedList/applied', (request, response) => {
@@ -93,14 +84,5 @@ app.post('/:site/:selectedList/applied', (request, response) => {
         error = err;
     });
 
-    let res = "Submission ";
-    if (!(site == "") && error == "") {
-        res += "Successful.";
-    } else {
-        res += "Unsuccessful. Please refresh the site and try again.";
-        console.log(error);
-    }
-
-    response.send(res);
-    response.end();
+    respond(response, error, "");
 });

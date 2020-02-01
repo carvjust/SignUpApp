@@ -1,5 +1,5 @@
 let usernameElement = document.getElementById("username");
-let listNameElement = document.getElementById("listname");
+let listNameElement = document.getElementById("listName");
 let promptElement = document.getElementById("prompt");
 let site;
 
@@ -16,18 +16,21 @@ async function submit() {
     let listName = listNameElement.value;
     let prompt = promptElement.value;
 
+    const data = {
+        username,
+        listName,
+        prompt
+    };
+
     const options = {
         method: 'POST',
+        body: JSON.stringify(data),
         headers: {
             "Content-Type": "application/json"
         },
-        site: site,
-        username: username,
-        listName: listName,
-        prompt: prompt
     };
 
-    const url = '/' + site + '/' + listName + '/createList';
+    const url = '/' + site + '/createList';
     const response = await fetch(url, options);
     const promise = await response.text();
     window.alert(promise);
