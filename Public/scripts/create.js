@@ -1,9 +1,12 @@
 let usernameElement = document.getElementById("username");
 let listSiteNameElement = document.getElementById("listSiteName");
 let promptPasswordElement = document.getElementById("promptPassword");
-let submitButtonElement = document.getElementById("submitButton");
+let createSiteButtonElement = document.getElementById("createSite");
+let topCreateTextElement = document.getElementById("topCreateText");
 let site;
 var createSite;
+// TODO: Change this so it cannot be seen by user
+const masterPass = "Washeslow?";
 
 function load() {
     loadSite();
@@ -14,14 +17,35 @@ function loadSite() {
     site = window.location.href.split('site=')[1];
 }
 
+function clear() {
+    usernameElement.value = "";
+    listSiteNameElement.value = "";
+    promptPasswordElement.value = "";
+}
+
 function createSiteClicked() {
-    createSite = !createSite;
     if (createSite) {
-        listSiteNameElement.placeholder = "Site Name";
-        promptPasswordElement.placeholder = "Password";
-    } else {
+        createSite = !createSite;
+        clear();
+        createSiteButtonElement.value = "Create Site";
+        topCreateTextElement.innerHTML = "Create A New List";
         listSiteNameElement.placeholder = "List Name";
         promptPasswordElement.placeholder = "Prompt";
+        return;
+    }
+
+    let pass = prompt("Please enter Master Password.");
+    if (pass === masterPass) {
+        createSite = !createSite;
+        if (createSite) {
+            clear();
+            createSiteButtonElement.value = "Create List";
+            topCreateTextElement.innerText = "!CAUTION! | Create A New Site | !CAUTION!";
+            listSiteNameElement.placeholder = "Site Name";
+            promptPasswordElement.placeholder = "Password";
+        }
+    } else {
+        alert("Incorrect password. Please verify and try.");
     }
 }
 
@@ -57,8 +81,9 @@ async function submit() {
         },
     };
 
-    const url = endpoint;
+    const url = "/" + site + endpoint;
     const response = await fetch(url, options);
     const promise = await response.text();
     window.alert(promise);
+    clear();
 }
