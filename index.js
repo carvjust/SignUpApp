@@ -1,5 +1,6 @@
 const express = require('express');
 const DataStore = require('nedb');
+//const Files = require('java.nio.file.Files');
 const app = express();
 
 const hostname = ''; // u3239b235428f5e.ant.amazon.com
@@ -18,7 +19,7 @@ function respond(response, error, message) {
     if (error === "") {
         res += "Successful." + message;
     } else {
-        res += "Unsuccessful. Please refresh the site and try again.";
+        res += "Unsuccessful." + message;
         console.log(error);
     }
 
@@ -26,17 +27,29 @@ function respond(response, error, message) {
     response.end();
 }
 
-app.post('/:site/createSite', (request, response) => {
-    const site = request.params.site;
+function shouldCreate(path) {
+    return true //!Files.exists(path);
+}
+
+app.post('/createSite', (request, response) => {
+    const data = request.body;
+
+    const username = data.username;
+    const site = data.siteName;
+    const password = data.password;
 
     const sitePath = "api/"+site+"/"+site+".db";
     const siteDB = new DataStore({ filename: ''+sitePath, autoload: true });
 
     const timestamp = Date.now();
-    const siteInfo = {"siteName": site, "created": timestamp, "createdBy": username};
+    const siteInfo = {"siteName": site, "created": timestamp, "createdBy": username, "password": password};
     console.log("Create site request submitted");
 
     let error = "";
+    if (!shouldCreate("Junk"))  {
+        respond(response, "error", " Unable to create site: " + site);
+        return;
+    }
     siteDB.insert(siteInfo, (err, doc) => {
         error = err;
     });

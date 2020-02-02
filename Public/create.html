@@ -8,18 +8,23 @@
 </head>
 
 <body onload="load()">
-<h1>Create a new list</h1>
+<text class="topCreate">Create a new list</text>
+<input type="button" id="createSite" value="Create Site" class="createButton" onclick="createSiteClicked()"><br><br>
 
-<label for="listName"></label>
-<input type="text" id="listName" placeholder="List name"/><br><br>
+<label for="listSiteName"></label>
+<input type="text" id="listSiteName" placeholder="List Name"/><br><br>
 
 <label for="username"></label>
 <input type="text" id="username" placeholder="Username"/><br><br>
 
-<label for="prompt"></label>
-<input type="text" id="prompt" placeholder="Prompt"/><br><br>
+<label for="promptPassword"></label>
+<input type="text" id="promptPassword" placeholder="Prompt"/><br>
 
-<input type="button" value="Create List" onclick="submit()">
+<br>
+
+
+
+<input type="button" id="submitButton" value="Create List" onclick="submit()">
 </body>
 
 <script src="scripts/create.js"></script>

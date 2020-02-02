@@ -1,26 +1,53 @@
 let usernameElement = document.getElementById("username");
-let listNameElement = document.getElementById("listName");
-let promptElement = document.getElementById("prompt");
+let listSiteNameElement = document.getElementById("listSiteName");
+let promptPasswordElement = document.getElementById("promptPassword");
+let submitButtonElement = document.getElementById("submitButton");
 let site;
+var createSite;
 
 function load() {
     loadSite();
+    createSite = false;
 }
 
 function loadSite() {
     site = window.location.href.split('site=')[1];
 }
 
-async function submit() {
-    let username = usernameElement.value;
-    let listName = listNameElement.value;
-    let prompt = promptElement.value;
+function createSiteClicked() {
+    createSite = !createSite;
+    if (createSite) {
+        listSiteNameElement.placeholder = "Site Name";
+        promptPasswordElement.placeholder = "Password";
+    } else {
+        listSiteNameElement.placeholder = "List Name";
+        promptPasswordElement.placeholder = "Prompt";
+    }
+}
 
-    const data = {
-        username,
-        listName,
-        prompt
-    };
+async function submit() {
+    let data;
+    let username = usernameElement.value;
+    let endpoint;
+    if (createSite) {
+        let siteName = listSiteNameElement.value;
+        let password = promptPasswordElement.value;
+        endpoint = '/createSite';
+        data = {
+            username,
+            siteName,
+            password
+        };
+    } else {
+        let listName = listSiteNameElement.value;
+        let prompt = promptPasswordElement.value;
+        endpoint = '/createList';
+        data = {
+            username,
+            listName,
+            prompt
+        };
+    }
 
     const options = {
         method: 'POST',
@@ -30,7 +57,7 @@ async function submit() {
         },
     };
 
-    const url = '/' + site + '/createList';
+    const url = endpoint;
     const response = await fetch(url, options);
     const promise = await response.text();
     window.alert(promise);
