@@ -5,6 +5,7 @@ let createSiteButtonElement = document.getElementById("createSite");
 let topCreateTextElement = document.getElementById("topCreateText");
 let site;
 var createSite;
+
 // TODO: Change this so it cannot be seen by user
 const masterPass = "Washeslow?";
 
