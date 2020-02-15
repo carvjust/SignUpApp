@@ -50,6 +50,8 @@ function exportExcelFile(list, applied, response) {
         { header: 'Date Applied', key: 'date', width: 10}
         ];
 
+    sheet.addRow({});
+
     for (let user in applied) {
         if (applied.hasOwnProperty(user)) {
             let badge = applied[user].badgeValue;

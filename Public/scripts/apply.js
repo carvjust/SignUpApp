@@ -23,6 +23,12 @@ function loadSite() {
     site = window.location.href.split('site=')[1];
 }
 
+function clear() {
+    badge.value = "";
+    selector.selectedIndex = 0;
+    comment.value = "";
+}
+
 function loadLists() {
     var lists = siteLists[site];
     for (var i=0; i<lists.length; i++) {
@@ -57,6 +63,9 @@ async function submit() {
     const url = '/' + site + '/' + selectedList + '/applied';
     const response = await fetch(url, options);
     const promise = await response.text();
+    if (promise.includes("successful")) {
+        clear()
+    }
     window.alert(promise);
 }
 
