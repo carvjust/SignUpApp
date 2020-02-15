@@ -2,6 +2,9 @@
   <dictionary name="carvjust">
     <words>
       <w>signup</w>
+      <w>wbout</w>
+      <w>xlsx</w>
+      <w>xlxs</w>
     </words>
   </dictionary>
 </component>

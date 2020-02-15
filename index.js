@@ -2,6 +2,7 @@ const express = require('express');
 const DataStore = require('nedb');
 const fs = require('fs');
 const app = express();
+const ExcelJS = require('exceljs');
 
 const hostname = ''; // u3239b235428f5e.ant.amazon.com
 const port = 3000;
@@ -34,13 +35,55 @@ function pathExists(path) {
     return fs.existsSync(actualPath);
 }
 
+function exportExcelFile(list, applied, response) {
+
+    // excel setup
+    var workbook = new ExcelJS.Workbook();
+    workbook.creator = "SLC1-IT";
+    workbook.properties.date1904 = true;
+
+    var sheet = workbook.addWorksheet(list + ' applied');
+
+    sheet.columns = [
+        { header: 'Badge #', key: 'badge', width: 10 },
+        { header: 'Comment', key: 'comment', width: 32 },
+        { header: 'Date Applied', key: 'date', width: 10}
+        ];
+
+    for (let user in applied) {
+        if (applied.hasOwnProperty(user)) {
+            let badge = applied[user].badgeValue;
+            let comment = applied[user].commentValue;
+            let date = new Date(applied[user].timestamp);
+
+            sheet.addRow({badge: badge, comment: comment, date: date})
+        }
+    }
+    var fileName = list + ' applied.xlsx';
+    response.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+    workbook.xlsx.write(response).then(function(){
+        response.end();
+    });
+}
+
 app.get('masterPass', (request, response) => {
 
 });
 
-// Get a specific list from site db. Whether it is closed or not
-app.get('/:site/:list', (request, response) => {
+// Get a specific list from site and, whether it is closed or not, download it
+app.get('/:site/:selectedList/download', (request, response) => {
+    const site = request.params.site;
+    const selectedList = request.params.selectedList;
 
+    const appliedPath = "api\\"+site+"\\lists\\"+selectedList+"\\applied.db";
+    const appliedDB = new DataStore({ filename: appliedPath, autoload: true });
+    appliedDB.loadDatabase();
+    let users = [];
+    appliedDB.find({}, function (err, docs) {
+        users = docs;
+        exportExcelFile(selectedList, users, response);
+    });
 });
 
 // Get all open list from a specified site db. THIS WILL ONLY GET THE NAMES OF SITES NOT THE DBS THEMSELVES
@@ -126,7 +169,7 @@ app.post('/:site/:selectedList/applied', (request, response) => {
     const sitePath = "api\\"+site;
     const listPath = "api\\"+site+"\\lists\\"+selectedList;
     const appliedPath = "api\\"+site+"\\lists\\"+selectedList+"\\applied.db";
-    const appliedDB = new DataStore({ filename: ''+appliedPath, autoload: true });
+    const appliedDB = new DataStore({ filename: appliedPath, autoload: true});
 
     const data = request.body;
     data.timestamp = Date.now();
@@ -141,6 +184,7 @@ app.post('/:site/:selectedList/applied', (request, response) => {
 
     let error = "";
     appliedDB.insert(data, (err, doc) => {
+        let document = doc;
         error = err;
     });
 
