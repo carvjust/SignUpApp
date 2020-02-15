@@ -38,11 +38,11 @@ function pathExists(path) {
 function exportExcelFile(list, applied, response) {
 
     // excel setup
-    var workbook = new ExcelJS.Workbook();
+    let workbook = new ExcelJS.Workbook();
     workbook.creator = "SLC1-IT";
     workbook.properties.date1904 = true;
 
-    var sheet = workbook.addWorksheet(list + ' applied');
+    let sheet = workbook.addWorksheet(list + ' applied');
 
     sheet.columns = [
         { header: 'Badge #', key: 'badge', width: 10 },
@@ -61,7 +61,7 @@ function exportExcelFile(list, applied, response) {
             sheet.addRow({badge: badge, comment: comment, date: date})
         }
     }
-    var fileName = list + ' applied.xlsx';
+    let fileName = list + ' applied.xlsx';
     response.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
     workbook.xlsx.write(response).then(function(){
@@ -157,7 +157,7 @@ app.post('/:site/createList', (request, response) => {
     }
 
     let error = "";
-    listDB.insert(listInfo, (err, doc) => {
+    listDB.insert(listInfo, (err,doc) => {
         error = err;
     });
 
