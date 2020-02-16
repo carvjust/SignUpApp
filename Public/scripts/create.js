@@ -4,10 +4,7 @@ let promptPasswordElement = document.getElementById("promptPassword");
 let createSiteButtonElement = document.getElementById("createSite");
 let topCreateTextElement = document.getElementById("topCreateText");
 let site;
-var createSite;
-
-// TODO: Change this so it cannot be seen by user
-const masterPass = "Washeslow?";
+let createSite;
 
 function load() {
     loadSite();
@@ -24,7 +21,7 @@ function clear() {
     promptPasswordElement.value = "";
 }
 
-function createSiteClicked() {
+async function createSiteClicked() {
     if (createSite) {
         createSite = !createSite;
         clear();
@@ -36,7 +33,23 @@ function createSiteClicked() {
     }
 
     let pass = prompt("Please enter Master Password.");
-    if (pass === masterPass) {
+    let data = {
+        pass
+    };
+
+    const options = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    };
+
+    const url = "/masterPass";
+    const response = await fetch(url, options);
+    const  passMatches = await response.text();
+
+    if (passMatches === "true") {
         createSite = !createSite;
         if (createSite) {
             clear();

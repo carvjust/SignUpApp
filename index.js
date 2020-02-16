@@ -36,8 +36,6 @@ function pathExists(path) {
 }
 
 function exportExcelFile(list, applied, response) {
-
-    // excel setup
     let workbook = new ExcelJS.Workbook();
     workbook.creator = "SLC1-IT";
     workbook.properties.date1904 = true;
@@ -47,7 +45,7 @@ function exportExcelFile(list, applied, response) {
     sheet.columns = [
         { header: 'Badge #', key: 'badge', width: 10 },
         { header: 'Comment', key: 'comment', width: 32 },
-        { header: 'Date Applied', key: 'date', width: 10}
+        { header: 'Date Applied', key: 'date', width: 15}
         ];
 
     sheet.addRow({});
@@ -61,6 +59,7 @@ function exportExcelFile(list, applied, response) {
             sheet.addRow({badge: badge, comment: comment, date: date})
         }
     }
+
     let fileName = list + ' applied.xlsx';
     response.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
@@ -68,10 +67,6 @@ function exportExcelFile(list, applied, response) {
         response.end();
     });
 }
-
-app.get('masterPass', (request, response) => {
-
-});
 
 // Get a specific list from site and, whether it is closed or not, download it
 app.get('/:site/:selectedList/download', (request, response) => {
@@ -97,6 +92,27 @@ app.get('/:site/getOpenListNames', (request, response) => {
 // Get applied DB from specified list
 app.get('/:site/:list/getApplied', (request, response) => {
 
+});
+
+app.post('/masterPass', (request, response) => {
+    let data = request.body;
+    let pass = data.pass;
+
+    const apiPath = "api/api.db";
+    const apiDB = new DataStore({ filename: apiPath, autoload: true });
+    apiDB.loadDatabase();
+
+    let master = "ifYouGuessThisAndMyCodeMalfunctionedThenUouCanHaveAccess";
+
+    apiDB.find({}, function (err, docs) {
+        master = docs[0].master;
+        if (pass === master) {
+            response.send(true);
+        } else {
+            response.send(false);
+        }
+        response.end();
+    });
 });
 
 // Close a list db
@@ -186,7 +202,6 @@ app.post('/:site/:selectedList/applied', (request, response) => {
 
     let error = "";
     appliedDB.insert(data, (err, doc) => {
-        let document = doc;
         error = err;
     });
 
