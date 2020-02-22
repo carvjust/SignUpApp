@@ -66,11 +66,11 @@ async function createSiteClicked() {
 async function submit() {
     let data;
     let username = usernameElement.value;
-    let endpoint;
+    let url = "/" + site;
     if (createSite) {
         let siteName = listSiteNameElement.value;
         let password = promptPasswordElement.value;
-        endpoint = '/createSite';
+        url += '/createSite';
         data = {
             username,
             siteName,
@@ -79,7 +79,7 @@ async function submit() {
     } else {
         let listName = listSiteNameElement.value;
         let prompt = promptPasswordElement.value;
-        endpoint = '/createList';
+        url += '/list/create';
         data = {
             username,
             listName,
@@ -95,7 +95,6 @@ async function submit() {
         },
     };
 
-    const url = "/" + site + endpoint;
     const response = await fetch(url, options);
     const promise = await response.text();
     window.alert(promise);

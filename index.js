@@ -102,7 +102,7 @@ app.post('/masterPass', (request, response) => {
     const apiDB = new DataStore({ filename: apiPath, autoload: true });
     apiDB.loadDatabase();
 
-    let master = "ifYouGuessThisAndMyCodeMalfunctionedThenUouCanHaveAccess";
+    let master = "!@#$%$#@!123ifYouGuessThisAndMyCodeMalfunctionedThenYouCanHaveAccess321!@#$%$#@!";
 
     apiDB.find({}, function (err, docs) {
         master = docs[0].master;
@@ -113,11 +113,6 @@ app.post('/masterPass', (request, response) => {
         }
         response.end();
     });
-});
-
-// Close a list db
-app.post('/:site/closeList', (request, response) => {
-
 });
 
 // Create a site DB to store lists
@@ -132,7 +127,7 @@ app.post('/:site/createSite', (request, response) => {
     const siteDB = new DataStore({ filename: ''+sitePath, autoload: true });
 
     const timestamp = Date.now();
-    const siteInfo = {"siteName": site, "created": timestamp, "createdBy": username, "password": password};
+    const siteInfo = {"siteName": site, "openLists": [], "closedLists": [], "created": timestamp, "createdBy": username, "password": password};
 
     let error = "";
     let sitePathExists = pathExists(sitePath);
@@ -148,38 +143,119 @@ app.post('/:site/createSite', (request, response) => {
     respond(response, error, " Created new site: " + site);
 });
 
+// create or close a list based on param passed in from user
+app.post('/:site/list/:shouldCreate', (request, response) => {
 
-app.post('/:site/createList', (request, response) => {
+    // create vars
     const site = request.params.site;
+    const shouldCreate = request.params.shouldCreate === "create";
     const data = request.body;
-
     const listName = data.listName;
     const userName = data.username;
-    const prompt = data.prompt;
+    const timestamp = Date.now();
+
+    let error = "";
+    let message = " Created new list: " + listName;
 
     const sitePath = "api\\"+site;
-    const listPath = "api\\"+site+"\\lists\\"+listName+"\\"+listName+".db";
-    const listDB = new DataStore({filename: ''+listPath, autoload: true});
+    const siteDBPath = sitePath+"\\"+site+".db";
+    const listPath = sitePath+"\\lists\\"+listName+"\\"+listName+".db";
 
-    const timestamp = Date.now();
-    const listInfo = {"prompt": prompt, "createdBy": userName, isClosed: false, closedBy: "", "timestamp": timestamp};
-
+    // check if site exists and if not send an error
     if (!(pathExists(sitePath))) {
         respond(response, "ERROR: (Creation Error) Site selected does not exist.", " Site " + site + " does not exist.");
         return;
-    } else if (pathExists(listPath)) {
-        respond(response, "ERROR: (Creation Error) List already exists.", " List " + listName + " already exists in site " + site + ".");
+    }
+
+    // after checking that the site exists create the DB
+    const siteDB = new DataStore({filename: ''+siteDBPath, autoload: true});
+    // just in case the database didn't load
+    siteDB.loadDatabase();
+
+    // first check to see if the site path already exists, then make sure that the list does not already exist. If either is true. do not create anything
+    if (shouldCreate && (pathExists(listPath))) {
+            respond(response, "ERROR: (Creation Error) List already exists.", " List " + listName + " already exists in site " + site + ".");
+            return;
+    } else if (!shouldCreate && (!pathExists())) {
+        respond(response, "ERROR: (Creation Error) List does not exist.", " List " + listName + " does not exist in site  " + site + ".");
         return;
     }
 
-    let error = "";
-    listDB.insert(listInfo, (err,doc) => {
-        error = err;
-    });
 
-    respond(response, error, " Created new list: " + listName);
+    // find the site db and get its info
+    siteDB.find({}, function (err, doc) {
+        // declare vars for docs found
+        const siteInfo = doc[0];
+        let prompt;
+        let listInfo;
+
+        if (shouldCreate) {
+            // set new list to open list var at the end of the array
+            const length = siteInfo.openLists.length;
+            siteInfo.openLists[length] = listName;
+
+            // assign vars that will only not be null if create was sent
+            prompt = data.prompt;
+            listInfo = {
+                "prompt": prompt,
+                "createdBy": userName,
+                isClosed: false,
+                closedBy: "",
+                "timestamp": timestamp
+            };
+        } else {
+            // if this else hits it means that we want to close the list.
+            // TODO: get array of open lists and from siteDB, then update.
+
+            if (!(siteInfo.openLists.contains(listName)) && (!(siteInfo.closedLists.contains(listName)))) {
+                respond(response, "ERROR: (Close Error) Something went wrong.", "Something went wrong with the creation of this list. Please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+            } else if (site.closedLists.contains(listName)) {
+                respond(response, "ERROR: (Close Error) Trying to close a list that is already closed.", "Something went wrong with the creation of this list. Please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+            }
+
+
+        }
+
+            // now that we have the updated info we need to remove the old version
+            siteDB.remove({siteName: site}, {}, function (remErr, numRemoved) {
+
+                // info should now be removed so we need to re-add the updated version
+                siteDB.insert(siteInfo, function (insErr, insDoc) {
+                    // check if user wants to create or not
+                    if (shouldCreate) {
+                        // create vars
+                        const listDB = new DataStore({filename: '' + listPath, autoload: true});
+                        listDB.loadDatabase();
+
+                        // now insert the list to its own db
+                        listDB.insert(listInfo, (listErr, listDoc) => {
+
+                            // check for any errors
+                            if (err != null) {
+                                error = err;
+                                message = "ERROR: " + error;
+                            } else if (remErr != null) {
+                                error = remErr;
+                                message = "ERROR: " + error;
+                            } else if (insErr != null) {
+                                error = insErr;
+                                message = "ERROR: " + error;
+                            } else if (listErr != null) {
+                                error = listErr;
+                                message = "ERROR: " + error;
+                            }
+
+                            respond(response, error, message);
+                        })
+                    } else {
+                        // TODO: work on the logic for updating the already created list db
+                    }
+                })
+            })
+    })
 });
 
+// set a user that has applied to list to selected lists database
 app.post('/:site/:selectedList/applied', (request, response) => {
     const site = request.params.site;
     const selectedList = request.params.selectedList;
