@@ -144,12 +144,12 @@ app.post('/:site/createSite', (request, response) => {
 });
 
 // create or close a list based on param passed in from user
-app.post('/:site/list/:shouldCreate', (request, response) => {
+app.post('/:site/createOrClose', (request, response) => {
 
     // create vars
     const site = request.params.site;
-    const shouldCreate = request.params.shouldCreate === "create";
     const data = request.body;
+    const shouldCreate = data.shouldCreate;
     const listName = data.listName;
     const userName = data.username;
     const timestamp = Date.now();
@@ -173,10 +173,7 @@ app.post('/:site/list/:shouldCreate', (request, response) => {
     siteDB.loadDatabase();
 
     // first check to see if the site path already exists, then make sure that the list does not already exist. If either is true. do not create anything
-    if (shouldCreate && (pathExists(listPath))) {
-            respond(response, "ERROR: (Creation Error) List already exists.", " List " + listName + " already exists in site " + site + ".");
-            return;
-    } else if (!shouldCreate && (!pathExists())) {
+    if (!shouldCreate && (!pathExists())) {
         respond(response, "ERROR: (Creation Error) List does not exist.", " List " + listName + " does not exist in site  " + site + ".");
         return;
     }
@@ -189,7 +186,30 @@ app.post('/:site/list/:shouldCreate', (request, response) => {
         let prompt;
         let listInfo;
 
+        // check for errors so we don't have any issues going forward
         if (shouldCreate) {
+            if (pathExists(listPath)) {
+                respond(response, "ERROR: (Creation Error) List already exists.", " List " + listName + " already exists in site " + site + ".");
+                return;
+            }
+        } else {
+            if (!pathExists(listPath)) {
+                respond(response, "ERROR: (Close Error) List does not exist.", " List " + listName + " does not exist in site  " + site + ".");
+                return;
+            } else if (!(siteInfo.openLists.contains(listName)) && (!(siteInfo.closedLists.contains(listName)))) {
+                respond(response, "ERROR: (Close Error) Something went wrong.", "Something went wrong with the creation of this list. Please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+            } else if (site.closedLists.contains(listName)) {
+                respond(response, "ERROR: (Close Error) Trying to close a list that is already closed.", "You are trying to close a list that has already been closed. Try refreshing the page and trying again. If problem persists, please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+            }
+        }
+
+        // now that we have checked for errors, create or grab listDB
+        let listDB = new DataStore({filename: '' + listPath, autoload: true});
+        listDB.loadDatabase();
+
+        if (shouldCreate) {
+            // if this else hits it means that we want to create a new list
+
             // set new list to open list var at the end of the array
             const length = siteInfo.openLists.length;
             siteInfo.openLists[length] = listName;
@@ -197,38 +217,68 @@ app.post('/:site/list/:shouldCreate', (request, response) => {
             // assign vars that will only not be null if create was sent
             prompt = data.prompt;
             listInfo = {
+                "listName": listName,
                 "prompt": prompt,
                 "createdBy": userName,
                 isClosed: false,
                 closedBy: "",
                 "timestamp": timestamp
             };
+
         } else {
             // if this else hits it means that we want to close the list.
-            // TODO: get array of open lists and from siteDB, then update.
 
-            if (!(siteInfo.openLists.contains(listName)) && (!(siteInfo.closedLists.contains(listName)))) {
-                respond(response, "ERROR: (Close Error) Something went wrong.", "Something went wrong with the creation of this list. Please contact a member of the SignUpApplication Team via signupapp@amazon.com");
-            } else if (site.closedLists.contains(listName)) {
-                respond(response, "ERROR: (Close Error) Trying to close a list that is already closed.", "Something went wrong with the creation of this list. Please contact a member of the SignUpApplication Team via signupapp@amazon.com");
-            }
+            // grab current list info
+            listDB.find({}, function (docs, err) {
+                listInfo = listDB[0];
+                // update List Info
+                listInfo.isClosed = true;
+                listInfo.closedBy = userName;
+            });
 
+            // get index of list and remove the list from open lists
+            let selectedIndex = siteInfo.openLists.indexOf(listName);
+            siteInfo.openLists.splice(selectedIndex, 1);
 
+            let length = siteInfo.closedLists.length;
+            siteInfo.closedLists[length] = listName;
         }
 
-            // now that we have the updated info we need to remove the old version
-            siteDB.remove({siteName: site}, {}, function (remErr, numRemoved) {
+        // now that we have the updated info we need to remove the old version
+        siteDB.remove({siteName: site}, {}, function (remErr, numRemoved) {
 
-                // info should now be removed so we need to re-add the updated version
-                siteDB.insert(siteInfo, function (insErr, insDoc) {
-                    // check if user wants to create or not
-                    if (shouldCreate) {
-                        // create vars
-                        const listDB = new DataStore({filename: '' + listPath, autoload: true});
-                        listDB.loadDatabase();
+            // info should now be removed so we need to re-add the updated version
+            siteDB.insert(siteInfo, function (insErr, insDoc) {
+                // check if user wants to create or not
+                if (shouldCreate) {
 
-                        // now insert the list to its own db
-                        listDB.insert(listInfo, (listErr, listDoc) => {
+                    // now insert the list to its own db
+                    listDB.insert(listInfo, (listErr, listDoc) => {
+
+                        // check for any errors
+                        if (err != null) {
+                            error = err;
+                            message = "ERROR: " + error;
+                        } else if (remErr != null) {
+                            error = remErr;
+                            message = "ERROR: " + error;
+                        } else if (insErr != null) {
+                            error = insErr;
+                            message = "ERROR: " + error;
+                        } else if (listErr != null) {
+                            error = listErr;
+                            message = "ERROR: " + error;
+                        }
+
+                        respond(response, error, message);
+                    })
+                } else {
+                    // TODO: test whether this works or not. need to hook up the close js to check
+
+                    listDB.remove({}, {}, function (remErr, numRemoved) {
+
+                        // info should now be removed so we need to re-add the updated version
+                        listDB.insert(listInfo, function (insErr, insDoc) {
 
                             // check for any errors
                             if (err != null) {
@@ -240,18 +290,14 @@ app.post('/:site/list/:shouldCreate', (request, response) => {
                             } else if (insErr != null) {
                                 error = insErr;
                                 message = "ERROR: " + error;
-                            } else if (listErr != null) {
-                                error = listErr;
-                                message = "ERROR: " + error;
                             }
 
                             respond(response, error, message);
                         })
-                    } else {
-                        // TODO: work on the logic for updating the already created list db
-                    }
-                })
+                    })
+                }
             })
+        })
     })
 });
 

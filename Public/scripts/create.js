@@ -79,11 +79,13 @@ async function submit() {
     } else {
         let listName = listSiteNameElement.value;
         let prompt = promptPasswordElement.value;
-        url += '/list/create';
+        let shouldCreate = true;
+        url += '/createOrClose';
         data = {
             username,
             listName,
-            prompt
+            prompt,
+            shouldCreate
         };
     }
 
