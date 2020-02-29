@@ -1,8 +1,16 @@
+// ---------------------------- //
+// ------- NODE.JS VARS ------- //
+// ---------------------------- //
+
 const express = require('express');
 const DataStore = require('nedb');
 const fs = require('fs');
 const app = express();
 const ExcelJS = require('exceljs');
+
+// ---------------------------- //
+// ------- SETUP SERVER ------- //
+// ---------------------------- //
 
 const hostname = ''; // u3239b235428f5e.ant.amazon.com
 const port = 3000;
@@ -16,6 +24,10 @@ app.use(express.urlencoded({extended:true}));
 app.use(express.json({limit: '1mb'}));
 
 const directoryPath = "C:\\Users\\carvjust\\WebstormProjects\\SignupApplication\\";
+
+// -------------------------------- //
+// ------- HELPER FUNCTIONS ------- //
+// -------------------------------- //
 
 function respond(response, error, message) {
     let res = "Submission ";
@@ -35,38 +47,9 @@ function pathExists(path) {
     return fs.existsSync(actualPath);
 }
 
-function exportExcelFile(list, applied, response) {
-    let workbook = new ExcelJS.Workbook();
-    workbook.creator = "SLC1-IT";
-    workbook.properties.date1904 = true;
-
-    let sheet = workbook.addWorksheet(list + ' applied');
-
-    sheet.columns = [
-        { header: 'Badge #', key: 'badge', width: 10 },
-        { header: 'Comment', key: 'comment', width: 32 },
-        { header: 'Date Applied', key: 'date', width: 15}
-        ];
-
-    sheet.addRow({});
-
-    for (let user in applied) {
-        if (applied.hasOwnProperty(user)) {
-            let badge = applied[user].badgeValue;
-            let comment = applied[user].commentValue;
-            let date = new Date(applied[user].timestamp);
-
-            sheet.addRow({badge: badge, comment: comment, date: date})
-        }
-    }
-
-    let fileName = list + ' applied.xlsx';
-    response.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
-    workbook.xlsx.write(response).then(function(){
-        response.end();
-    });
-}
+// ------------------------------------- //
+// ------- GET REQUEST FUNCTIONS ------- //
+// ------------------------------------- //
 
 // Get a specific list from site and, whether it is closed or not, download it
 app.get('/:site/:selectedList/download', (request, response) => {
@@ -76,24 +59,98 @@ app.get('/:site/:selectedList/download', (request, response) => {
     const appliedPath = "api\\"+site+"\\lists\\"+selectedList+"\\applied.db";
     const appliedDB = new DataStore({ filename: appliedPath, autoload: true });
     appliedDB.loadDatabase();
-    let users = [];
+
     appliedDB.find({}, function (err, docs) {
-        users = docs;
-        exportExcelFile(selectedList, users, response);
+        let applied = docs;
+        let workbook = new ExcelJS.Workbook();
+        workbook.creator = "SLC1-IT";
+        workbook.properties.date1904 = true;
+
+        let sheet = workbook.addWorksheet(selectedList + ' applied');
+
+        sheet.columns = [
+            { header: 'Badge #', key: 'badge', width: 10 },
+            { header: 'Comment', key: 'comment', width: 32 },
+            { header: 'Date Applied', key: 'date', width: 15}
+        ];
+
+        sheet.addRow({});
+
+        for (let user in applied) {
+            if (applied.hasOwnProperty(user)) {
+                let badge = applied[user].badgeValue;
+                let comment = applied[user].commentValue;
+                let date = new Date(applied[user].timestamp);
+
+                sheet.addRow({badge: badge, comment: comment, date: date})
+            }
+        }
+
+        let fileName = selectedList + ' applied.xlsx';
+        response.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+        workbook.xlsx.write(response).then(function(){
+            response.end();
+        });
     });
+});
+
+app.get('/sites', (request, response) => {
+
+    const apiPath = "api/api.db";
+
+    // check if api exists and if not send a BIG error
+    if (!(pathExists(apiPath))) {
+        respond(response, "ERROR: (HUGE ERROR) API may have been deleted.", "Please try refreshing the page, if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com with error code '00F'");
+        return;
+    }
+
+    // after checking that the api exists create the DB
+    const apiDB = new DataStore({filename: ''+apiPath, autoload: true});
+
+    apiDB.find({}, function (err, docs) {
+        let apiInfo = docs[0];
+        let sites = apiInfo.sites;
+
+        response.send(sites);
+        response.end();
+    })
 });
 
 // Get all open list from a specified site db. THIS WILL ONLY GET THE NAMES OF SITES NOT THE DBS THEMSELVES
 // This should only be used for loading into selectors
 app.get('/:site/getOpenListNames', (request, response) => {
 
+    // create vars
+    const site = request.params.site;
+    const sitePath = "api\\"+site;
+    const siteDBPath = sitePath+"\\"+site+".db";
+
+    // check if site exists and if not send an error
+    if (!(pathExists(sitePath)) || !(pathExists(siteDBPath))) {
+        respond(response, "ERROR: (Creation Error) Site selected does not exist.", " Site " + site + " does not exist. Please verify you have the correct site, if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+        return;
+    }
+
+    // after checking that the site exists create the DB
+    const siteDB = new DataStore({filename: ''+siteDBPath, autoload: true});
+    // just in case the database didn't load
+    siteDB.loadDatabase();
+
+    siteDB.find({}, function (err, docs) {
+        let siteInfo = docs[0];
+        let openLists = siteInfo.openLists;
+
+        response.send(openLists);
+        response.end();
+    })
 });
 
-// Get applied DB from specified list
-app.get('/:site/:list/getApplied', (request, response) => {
+// -------------------------------------- //
+// ------- POST REQUEST FUNCTIONS ------- //
+// -------------------------------------- //
 
-});
-
+// get the master password from api database
 app.post('/masterPass', (request, response) => {
     let data = request.body;
     let pass = data.pass;
@@ -123,8 +180,9 @@ app.post('/:site/createSite', (request, response) => {
     const site = data.siteName;
     const password = data.password;
 
+    const apiPath = "api\\api.db";
     const sitePath = "api\\"+site+"\\"+site+".db";
-    const siteDB = new DataStore({ filename: ''+sitePath, autoload: true });
+    const apiDB = new DataStore({ filename: apiPath, autoload: true });
 
     const timestamp = Date.now();
     const siteInfo = {"siteName": site, "openLists": [], "closedLists": [], "created": timestamp, "createdBy": username, "password": password};
@@ -136,11 +194,44 @@ app.post('/:site/createSite', (request, response) => {
         return;
     }
 
-    siteDB.insert(siteInfo, (err, doc) => {
-        error = err;
-    });
+    let message = " Created new site: " + site;
 
-    respond(response, error, " Created new site: " + site);
+    apiDB.find({}, (err, doc) => {
+
+        let apiInfo = doc[0];
+        let sites = apiInfo["sites"];
+        let length = sites.length;
+        sites[length] = site;
+
+        const siteDB = new DataStore({filename: '' + sitePath, autoload: true});
+
+         apiDB.remove({}, (remErr, amountRemoved) => {
+             apiDB.insert(apiInfo, (insErr, apiDoc) => {
+                 siteDB.insert(siteInfo, (siteErr, siteDoc) => {
+                     // check for any errors
+                     if (err != null) {
+                         error = err;
+                         message = "ERROR: " + error;
+                         respond(response, error, message);
+                     } else if (remErr != null) {
+                         error = remErr;
+                         message = "ERROR: " + error;
+                         respond(response, error, message);
+                     } else if (insErr != null) {
+                         error = insErr;
+                         message = "ERROR: " + error;
+                         respond(response, error, message);
+                     } else if (siteErr != null) {
+                         error = siteErr;
+                         message = "ERROR: " + error;
+                         respond(response, error, message);
+                     } else {
+                         respond(response, error, message);
+                     }
+                 })
+             })
+         });
+    });
 });
 
 // create or close a list based on param passed in from user
@@ -172,13 +263,6 @@ app.post('/:site/createOrClose', (request, response) => {
     // just in case the database didn't load
     siteDB.loadDatabase();
 
-    // first check to see if the site path already exists, then make sure that the list does not already exist. If either is true. do not create anything
-    if (!shouldCreate && (!pathExists())) {
-        respond(response, "ERROR: (Creation Error) List does not exist.", " List " + listName + " does not exist in site  " + site + ".");
-        return;
-    }
-
-
     // find the site db and get its info
     siteDB.find({}, function (err, doc) {
         // declare vars for docs found
@@ -196,13 +280,17 @@ app.post('/:site/createOrClose', (request, response) => {
             if (!pathExists(listPath)) {
                 respond(response, "ERROR: (Close Error) List does not exist.", " List " + listName + " does not exist in site  " + site + ".");
                 return;
-            } else if (!(siteInfo.openLists.contains(listName)) && (!(siteInfo.closedLists.contains(listName)))) {
-                respond(response, "ERROR: (Close Error) Something went wrong.", "Something went wrong with the creation of this list. Please contact a member of the SignUpApplication Team via signupapp@amazon.com");
-            } else if (site.closedLists.contains(listName)) {
-                respond(response, "ERROR: (Close Error) Trying to close a list that is already closed.", "You are trying to close a list that has already been closed. Try refreshing the page and trying again. If problem persists, please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+            }
+            if (siteInfo.openLists.indexOf(listName) === -1) {
+                if (siteInfo.closedLists.indexOf(listName) === -1) {
+                    respond(response, "ERROR: (Close Error) Something went wrong.", "Something went wrong with the creation of this list. Please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+                    return;
+                } else {
+                    respond(response, "ERROR: (Close Error) Trying to close a list that is already closed.", "You are trying to close a list that has already been closed. Try refreshing the page and trying again. If problem persists, please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+                    return;
+                }
             }
         }
-
         // now that we have checked for errors, create or grab listDB
         let listDB = new DataStore({filename: '' + listPath, autoload: true});
         listDB.loadDatabase();
@@ -227,15 +315,6 @@ app.post('/:site/createOrClose', (request, response) => {
 
         } else {
             // if this else hits it means that we want to close the list.
-
-            // grab current list info
-            listDB.find({}, function (docs, err) {
-                listInfo = listDB[0];
-                // update List Info
-                listInfo.isClosed = true;
-                listInfo.closedBy = userName;
-            });
-
             // get index of list and remove the list from open lists
             let selectedIndex = siteInfo.openLists.indexOf(listName);
             siteInfo.openLists.splice(selectedIndex, 1);
@@ -275,24 +354,34 @@ app.post('/:site/createOrClose', (request, response) => {
                 } else {
                     // TODO: test whether this works or not. need to hook up the close js to check
 
-                    listDB.remove({}, {}, function (remErr, numRemoved) {
+                    // grab current list info
+                    listDB.find({}, function (err, listDoc) {
 
-                        // info should now be removed so we need to re-add the updated version
-                        listDB.insert(listInfo, function (insErr, insDoc) {
+                        listInfo = listDoc[0];
+                        // update List Info
+                        listInfo.isClosed = true;
+                        listInfo.closedBy = userName;
+                        listInfo.closedDate = timestamp;
 
-                            // check for any errors
-                            if (err != null) {
-                                error = err;
-                                message = "ERROR: " + error;
-                            } else if (remErr != null) {
-                                error = remErr;
-                                message = "ERROR: " + error;
-                            } else if (insErr != null) {
-                                error = insErr;
-                                message = "ERROR: " + error;
-                            }
+                        listDB.remove({}, {}, function (remErr, numRemoved) {
 
-                            respond(response, error, message);
+                            // info should now be removed so we need to re-add the updated version
+                            listDB.insert(listInfo, function (insErr, insDoc) {
+
+                                // check for any errors
+                                if (err != null) {
+                                    error = err;
+                                    message = "ERROR: " + error;
+                                } else if (remErr != null) {
+                                    error = remErr;
+                                    message = "ERROR: " + error;
+                                } else if (insErr != null) {
+                                    error = insErr;
+                                    message = "ERROR: " + error;
+                                }
+
+                                respond(response, error, message);
+                            })
                         })
                     })
                 }

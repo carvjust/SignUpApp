@@ -1,36 +1,26 @@
 let badge = document.getElementById("badge");
 let comment = document.getElementById("comment");
 let selector = document.getElementById("selector");
-let placeholder = "Why do you want to be a part of our team?";
+let placeholder = "Why do you want to be a part of this group?";
 let site;
 
-let SLC1_Lists = ["IT", "Learning", "Safety"];
-let SLC3_Lists = ["LP", "Non-Inventory", "Outbound"];
-let DUT1_Lists = ["Night Shift", "Day Shift"];
-
-let siteLists = {};
-siteLists["SLC1"] = SLC1_Lists;
-siteLists["SLC3"] = SLC3_Lists;
-siteLists["DUT1"] = DUT1_Lists;
-
-function load() {
-    loadSite();
-    loadLists();
-    loadPlaceholder();
-}
-
-function loadSite() {
+async function loadLists() {
     site = window.location.href.split('site=')[1];
-}
 
-function clear() {
-    badge.value = "";
-    selector.selectedIndex = 0;
-    comment.value = "";
-}
+    // TODO: change this function to actually do something
+    loadPlaceholder();
 
-function loadLists() {
-    let lists = siteLists[site];
+    let url = "/" + site + '/getOpenListNames';
+    const options = {
+        method: 'GET',
+        headers: {
+            "Content-Type": "application/json"
+        },
+    };
+
+    const response = await fetch(url, options);
+    const lists = JSON.parse(await response.text());
+
     for (let i=0; i<lists.length; i++) {
         let list = lists[i];
         let newOption = document.createElement("option");
@@ -38,6 +28,12 @@ function loadLists() {
         newOption.innerHTML = list;
         document.getElementById("selector").appendChild(newOption);
     }
+}
+
+function clear() {
+    badge.value = "";
+    selector.selectedIndex = 0;
+    comment.value = "";
 }
 
 async function submit() {
@@ -70,5 +66,6 @@ async function submit() {
 }
 
 function loadPlaceholder() {
+    // TODO: change this to grab from API and update placeholder with prompt
     comment.placeholder = placeholder;
 }

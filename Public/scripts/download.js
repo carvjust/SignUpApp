@@ -3,26 +3,19 @@ let site;
 let selectedList;
 
 
-let SLC1_Lists = ["IT", "Learning", "Safety"];
-let SLC3_Lists = ["LP", "Non-Inventory", "Outbound"];
-let DUT1_Lists = ["Night Shift", "Day Shift"];
-
-let siteLists = {};
-siteLists["SLC1"] = SLC1_Lists;
-siteLists["SLC3"] = SLC3_Lists;
-siteLists["DUT1"] = DUT1_Lists;
-
-function load() {
-    loadSite();
-    loadLists();
-}
-
-function loadSite() {
+async function loadLists() {
     site = window.location.href.split('site=')[1];
-}
+    let url = "/" + site + '/getOpenListNames';
+    const options = {
+        method: 'GET',
+        headers: {
+            "Content-Type": "application/json"
+        },
+    };
 
-function loadLists() {
-    let lists = siteLists[site];
+    const response = await fetch(url, options);
+    const lists = JSON.parse(await response.text());
+
     for (let i=0; i<lists.length; i++) {
         let list = lists[i];
         let newOption = document.createElement("option");
@@ -31,6 +24,7 @@ function loadLists() {
         document.getElementById("selector").appendChild(newOption);
     }
 }
+
 
 async function download() {
     selectedList = selector.options[selector.selectedIndex].value;

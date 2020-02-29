@@ -1,9 +1,18 @@
 let selector = document.getElementById("selector");
-var sites = ["SLC1", "SLC3", "DUT1"];
 
-function loadSites() {
-    var i;
-    for (i=0; i<sites.length; i++) {
+async function loadSites() {
+    let url = "/sites";
+    const options = {
+        method: 'GET',
+        headers: {
+            "Content-Type": "application/json"
+        },
+    };
+
+    const response = await fetch(url, options);
+    const sites = JSON.parse(await response.text());
+
+    for (let i=0; i<sites.length; i++) {
         let site = sites[i];
         let newOption = document.createElement("option");
         newOption.setAttribute("value", "" + site);
