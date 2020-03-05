@@ -5,7 +5,7 @@ let selectedList;
 
 async function loadLists() {
     site = window.location.href.split('site=')[1];
-    let url = "/" + site + '/getOpenListNames';
+    let url = "/" + site + '/getAllListNames';
     const options = {
         method: 'GET',
         headers: {

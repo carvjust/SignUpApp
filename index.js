@@ -12,7 +12,7 @@ const ExcelJS = require('exceljs');
 // ------- SETUP SERVER ------- //
 // ---------------------------- //
 
-const hostname = ''; // u3239b235428f5e.ant.amazon.com
+const hostname = '127.0.0.1'; // u3239b235428f5e.ant.amazon.com
 const port = 3000;
 
 app.listen(port, hostname, () => {
@@ -146,6 +146,45 @@ app.get('/:site/getOpenListNames', (request, response) => {
     })
 });
 
+// Get all lists names regardless of if the list is open from a specified site db. THIS WILL ONLY GET THE NAMES OF SITES NOT THE DBS THEMSELVES
+// This should only be used for loading into selectors
+app.get('/:site/getAllListNames', (request, response) => {
+
+    // create vars
+    const site = request.params.site;
+    const sitePath = "api\\"+site;
+    const siteDBPath = sitePath+"\\"+site+".db";
+
+    // check if site exists and if not send an error
+    if (!(pathExists(sitePath)) || !(pathExists(siteDBPath))) {
+        respond(response, "ERROR: (Creation Error) Site selected does not exist.", " Site " + site + " does not exist. Please verify you have the correct site, if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+        return;
+    }
+
+    // after checking that the site exists create the DB
+    const siteDB = new DataStore({filename: ''+siteDBPath, autoload: true});
+    // just in case the database didn't load
+    siteDB.loadDatabase();
+
+    siteDB.find({}, function (err, docs) {
+        let siteInfo = docs[0];
+        let openLists = siteInfo.openLists;
+        let closedLists = siteInfo.closedLists;
+
+        let allLists = [];
+
+        for (let i = 0; i < openLists.length; i++) {
+            allLists[allLists.length] = openLists[i];
+        }
+        for (let i = 0; i < closedLists.length; i++) {
+            allLists[allLists.length] = closedLists[i];
+        }
+
+        response.send(allLists);
+        response.end();
+    })
+});
+
 // -------------------------------------- //
 // ------- POST REQUEST FUNCTIONS ------- //
 // -------------------------------------- //
@@ -176,9 +215,9 @@ app.post('/masterPass', (request, response) => {
 app.post('/:site/createSite', (request, response) => {
     const data = request.body;
 
-    const username = data.username;
-    const site = data.siteName;
-    const password = data.password;
+    let username = data.username;
+    let site = data.siteName.toUpperCase();
+    let password = data.password;
 
     const apiPath = "api\\api.db";
     const sitePath = "api\\"+site+"\\"+site+".db";
@@ -241,6 +280,7 @@ app.post('/:site/createOrClose', (request, response) => {
     const site = request.params.site;
     const data = request.body;
     const shouldCreate = data.shouldCreate;
+
     const listName = data.listName;
     const userName = data.username;
     const timestamp = Date.now();
