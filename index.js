@@ -12,8 +12,6 @@ const ExcelJS = require('exceljs');
 // ------- SETUP SERVER ------- //
 // ---------------------------- //
 
-// Test
-
 const hostname = '127.0.0.1'; // u3239b235428f5e.ant.amazon.com
 const port = 3000;
 
@@ -25,7 +23,7 @@ app.use(express.static(__dirname+'/Public'));
 app.use(express.urlencoded({extended:true}));
 app.use(express.json({limit: '1mb'}));
 
-const directoryPath = "C:\\Users\\carvjust\\WebstormProjects\\SignupApplication\\";
+const directoryPath = __dirname;
 
 // -------------------------------- //
 // ------- HELPER FUNCTIONS ------- //
@@ -45,7 +43,7 @@ function respond(response, error, message) {
 }
 
 function pathExists(path) {
-    const actualPath = directoryPath+path;
+    const actualPath = directoryPath+"/"+path;
     return fs.existsSync(actualPath);
 }
 
@@ -58,7 +56,7 @@ app.get('/:site/:selectedList/download', (request, response) => {
     const site = request.params.site;
     const selectedList = request.params.selectedList;
 
-    const appliedPath = "api\\"+site+"\\lists\\"+selectedList+"\\applied.db";
+    const appliedPath = "api/"+site+"/lists/"+selectedList+"/applied.db";
     const appliedDB = new DataStore({ filename: appliedPath, autoload: true });
     appliedDB.loadDatabase();
 
@@ -125,8 +123,8 @@ app.get('/:site/getOpenListNames', (request, response) => {
 
     // create vars
     const site = request.params.site;
-    const sitePath = "api\\"+site;
-    const siteDBPath = sitePath+"\\"+site+".db";
+    const sitePath = "api/"+site;
+    const siteDBPath = sitePath+"/"+site+".db";
 
     // check if site exists and if not send an error
     if (!(pathExists(sitePath)) || !(pathExists(siteDBPath))) {
@@ -154,8 +152,8 @@ app.get('/:site/getAllListNames', (request, response) => {
 
     // create vars
     const site = request.params.site;
-    const sitePath = "api\\"+site;
-    const siteDBPath = sitePath+"\\"+site+".db";
+    const sitePath = "api/"+site;
+    const siteDBPath = sitePath+"/"+site+".db";
 
     // check if site exists and if not send an error
     if (!(pathExists(sitePath)) || !(pathExists(siteDBPath))) {
@@ -221,8 +219,8 @@ app.post('/:site/createSite', (request, response) => {
     let site = data.siteName.toUpperCase();
     let password = data.password;
 
-    const apiPath = "api\\api.db";
-    const sitePath = "api\\"+site+"\\"+site+".db";
+    const apiPath = "api/api.db";
+    const sitePath = "api/"+site+"/"+site+".db";
     const apiDB = new DataStore({ filename: apiPath, autoload: true });
 
     const timestamp = Date.now();
@@ -290,9 +288,9 @@ app.post('/:site/createOrClose', (request, response) => {
     let error = "";
     let message = " Created new list: " + listName;
 
-    const sitePath = "api\\"+site;
-    const siteDBPath = sitePath+"\\"+site+".db";
-    const listPath = sitePath+"\\lists\\"+listName+"\\"+listName+".db";
+    const sitePath = "api/"+site;
+    const siteDBPath = sitePath+"/"+site+".db";
+    const listPath = sitePath+"/lists/"+listName+"/"+listName+".db";
 
     // check if site exists and if not send an error
     if (!(pathExists(sitePath))) {
@@ -437,9 +435,9 @@ app.post('/:site/:selectedList/applied', (request, response) => {
     const site = request.params.site;
     const selectedList = request.params.selectedList;
 
-    const sitePath = "api\\"+site;
-    const listPath = "api\\"+site+"\\lists\\"+selectedList;
-    const appliedPath = "api\\"+site+"\\lists\\"+selectedList+"\\applied.db";
+    const sitePath = "api/"+site;
+    const listPath = "api/"+site+"/lists/"+selectedList;
+    const appliedPath = "api/"+site+"/lists/"+selectedList+"/applied.db";
     const appliedDB = new DataStore({ filename: appliedPath, autoload: true});
 
     const data = request.body;
