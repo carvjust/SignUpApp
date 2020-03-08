@@ -1,10 +1,8 @@
 let selector = document.getElementById("selector");
 let passwordInput = document.getElementById("password");
-let realPass;
+
 
 async function loadSites() {
-
-    loadPass();
 
     let url = "/sites";
     const options = {
@@ -27,21 +25,33 @@ async function loadSites() {
 }
 
 
-function checkPass() {
+async function checkPass(selectedSite) {
     let password = passwordInput.value;
-    return password === realPass;
+    let data = {
+        password
+    };
+
+    let url = "/" + selectedSite + "/checkPassword";
+    const options = {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    };
+
+    const response = await fetch(url, options);
+    const correct = await response.text();
+
+    return(correct === "true");
 }
 
-function transition(cdc) {
-    if (checkPass()) {
+async function transition(cdc) {
+    let selectedSite = selector.options[selector.selectedIndex].value;
+    if (await checkPass(selectedSite)) {
         passwordInput.value = "";
         window.location.href = cdc + ".html?site=" + selector.options[selector.selectedIndex].value;
     } else {
         window.alert("Incorrect password. Please check you have the most up to date password and try again.");
     }
-}
-
-function loadPass() {
-    // TODO: change this to grab the real password from site creation
-    realPass = "CheckThis";
 }

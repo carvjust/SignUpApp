@@ -185,11 +185,18 @@ app.get('/:site/getAllListNames', (request, response) => {
     })
 });
 
+app.get('/:site/:selectedList/getPrompt', (request, response) => {
+    const site = request.params.site;
+    const selectedList = request.params.selectedList;
+
+
+});
+
 // -------------------------------------- //
 // ------- POST REQUEST FUNCTIONS ------- //
 // -------------------------------------- //
 
-// get the master password from api database
+// check master password from api database
 app.post('/masterPass', (request, response) => {
     let data = request.body;
     let pass = data.pass;
@@ -202,13 +209,37 @@ app.post('/masterPass', (request, response) => {
 
     apiDB.find({}, function (err, docs) {
         master = docs[0].master;
-        if (pass === master) {
-            response.send(true);
-        } else {
-            response.send(false);
-        }
+
+        response.send(pass === master);
         response.end();
     });
+});
+
+// check site password
+app.post('/:site/checkPassword', (request, response) => {
+    const site = request.params.site;
+    const inputPass = request.body.password;
+
+    const sitePath = "api/"+site;
+    const siteDBPath = sitePath+"/"+site+".db";
+
+    if (!(pathExists(sitePath)) || !(pathExists(siteDBPath))) {
+        respond(response, "ERROR: (Creation Error) Site selected does not exist.", " Site " + site + " does not exist. Please verify you have the correct site, if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+        return;
+    }
+
+    // after checking that the site exists create the DB
+    const siteDB = new DataStore({filename: ''+siteDBPath, autoload: true});
+    // just in case the database didn't load
+    siteDB.loadDatabase();
+
+    siteDB.find({}, function (err, docs) {
+        let siteInfo = docs[0];
+        let correctPass = siteInfo.password;
+
+        response.send(inputPass === correctPass);
+        response.end();
+    })
 });
 
 // Create a site DB to store lists
