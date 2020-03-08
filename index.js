@@ -101,7 +101,9 @@ app.get('/sites', (request, response) => {
 
     // check if api exists and if not send a BIG error
     if (!(pathExists(apiPath))) {
-        respond(response, "ERROR: (HUGE ERROR) API may have been deleted.", "Please try refreshing the page, if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com with error code '00F'");
+        respond(response, "ERROR: (HUGE ERROR) API may have been deleted.",
+            "Please try refreshing the page, if problem persists please contact a member" +
+             " of the SignUpApplication Team via signupapp@amazon.com with error code '00F'");
         return;
     }
 
@@ -128,7 +130,9 @@ app.get('/:site/getOpenListNames', (request, response) => {
 
     // check if site exists and if not send an error
     if (!(pathExists(sitePath)) || !(pathExists(siteDBPath))) {
-        respond(response, "ERROR: (Creation Error) Site selected does not exist.", " Site " + site + " does not exist. Please verify you have the correct site, if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+        respond(response, "ERROR: (Creation Error) Site selected does not exist.",
+            " Site " + site + " does not exist. Please verify you have the correct site, " +
+             "if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
         return;
     }
 
@@ -157,7 +161,9 @@ app.get('/:site/getAllListNames', (request, response) => {
 
     // check if site exists and if not send an error
     if (!(pathExists(sitePath)) || !(pathExists(siteDBPath))) {
-        respond(response, "ERROR: (Creation Error) Site selected does not exist.", " Site " + site + " does not exist. Please verify you have the correct site, if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+        respond(response, "ERROR: (Creation Error) Site selected does not exist.",
+            " Site " + site + " does not exist. Please verify you have the correct site, " +
+             "if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
         return;
     }
 
@@ -354,10 +360,14 @@ app.post('/:site/createOrClose', (request, response) => {
             }
             if (siteInfo.openLists.indexOf(listName) === -1) {
                 if (siteInfo.closedLists.indexOf(listName) === -1) {
-                    respond(response, "ERROR: (Close Error) Something went wrong.", "Something went wrong with the creation of this list. Please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+                    respond(response, "ERROR: (Close Error) Something went wrong.",
+                        "Something went wrong with the creation of this list. " +
+                        "Please contact a member of the SignUpApplication Team via signupapp@amazon.com");
                     return;
                 } else {
-                    respond(response, "ERROR: (Close Error) Trying to close a list that is already closed.", "You are trying to close a list that has already been closed. Try refreshing the page and trying again. If problem persists, please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+                    respond(response, "ERROR: (Close Error) Trying to close a list that is already closed.",
+                        "You are trying to close a list that has already been closed. Try refreshing the page and trying again. " +
+                        "If problem persists, please contact a member of the SignUpApplication Team via signupapp@amazon.com");
                     return;
                 }
             }
