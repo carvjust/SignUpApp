@@ -230,7 +230,9 @@ app.post('/:site/checkPassword', (request, response) => {
     const siteDBPath = sitePath+"/"+site+".db";
 
     if (!(pathExists(sitePath)) || !(pathExists(siteDBPath))) {
-        respond(response, "ERROR: (Creation Error) Site selected does not exist.", " Site " + site + " does not exist. Please verify you have the correct site, if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+        respond(response, "ERROR: (Creation Error) Site selected does not exist.",
+            "Site " + site + " does not exist. Please verify you have the correct site, " +
+                     "if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
         return;
     }
 
