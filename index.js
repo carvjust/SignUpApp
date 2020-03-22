@@ -47,6 +47,10 @@ function pathExists(path) {
     return fs.existsSync(actualPath);
 }
 
+function wait() {
+    // do nothing
+}
+
 // ------------------------------------- //
 // ------- GET REQUEST FUNCTIONS ------- //
 // ------------------------------------- //
@@ -122,7 +126,7 @@ app.get('/sites', (request, response) => {
 // Get all open list from a specified site db. THIS WILL ONLY GET THE NAMES OF SITES NOT THE DBS THEMSELVES
 // This should only be used for loading into selectors
 app.get('/:site/getOpenListNames', (request, response) => {
-
+    //request.connection.setTimeout(100000); //100 seconds
     // create vars
     const site = request.params.site;
     const sitePath = "api/"+site;
@@ -130,7 +134,7 @@ app.get('/:site/getOpenListNames', (request, response) => {
 
     // check if site exists and if not send an error
     if (!(pathExists(sitePath)) || !(pathExists(siteDBPath))) {
-        respond(response, "ERROR: (Creation Error) Site selected does not exist.",
+        respond(response, "ERROR: (Lookup Error) Site selected does not exist.",
             " Site " + site + " does not exist. Please verify you have the correct site, " +
              "if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
         return;
@@ -153,7 +157,7 @@ app.get('/:site/getOpenListNames', (request, response) => {
 // Get all lists names regardless of if the list is open from a specified site db. THIS WILL ONLY GET THE NAMES OF SITES NOT THE DBS THEMSELVES
 // This should only be used for loading into selectors
 app.get('/:site/getAllListNames', (request, response) => {
-
+    request.connection.setTimeout(100000); //100 seconds
     // create vars
     const site = request.params.site;
     const sitePath = "api/"+site;
@@ -161,7 +165,7 @@ app.get('/:site/getAllListNames', (request, response) => {
 
     // check if site exists and if not send an error
     if (!(pathExists(sitePath)) || !(pathExists(siteDBPath))) {
-        respond(response, "ERROR: (Creation Error) Site selected does not exist.",
+        respond(response, "ERROR: (Lookup Error) Site selected does not exist.",
             " Site " + site + " does not exist. Please verify you have the correct site, " +
              "if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
         return;
@@ -191,11 +195,66 @@ app.get('/:site/getAllListNames', (request, response) => {
     })
 });
 
-app.get('/:site/:selectedList/getPrompt', (request, response) => {
+app.get('/:site/loadListsWithPrompt', (request, response) => {
+
+// create vars
     const site = request.params.site;
-    const selectedList = request.params.selectedList;
+    const sitePath = "api/"+site;
+    const siteDBPath = sitePath+"/"+site+".db";
 
+    // check if site exists and if not send an error
+    if (!(pathExists(sitePath)) || !(pathExists(siteDBPath))) {
+        respond(response, "ERROR: (Lookup Error) Site selected does not exist.",
+            " Site " + site + " does not exist. Please verify you have the correct site, " +
+            "if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+        return;
+    }
 
+    // after checking that the site exists create the DB
+    const siteDB = new DataStore({filename: ''+siteDBPath, autoload: true});
+    // just in case the database didn't load
+    siteDB.loadDatabase();
+
+    siteDB.find({}, function (err, docs) {
+        let siteInfo = docs[0];
+        let openLists = siteInfo.openLists;
+        let importantInfo = [];
+        let finished = 0;
+
+        for (let i=0; i<openLists.length; i++) {
+            let listName = openLists[i];
+            let listPath = sitePath + "/lists/" + listName;
+            let listDBPath = sitePath + "/lists/" + listName + "/" + listName + ".db";
+
+            if (!(pathExists(listPath)) || !(pathExists(listDBPath))) {
+                respond(response, "ERROR: (Lookup Error) List selected does not exist.",
+                    " List " + listName + " does not exist or is no longer open." +
+                    " Please verify you have the correct list and refresh the site, " +
+                    "if problem persists please contact a member of the SignUpApplication Team via signupapp@amazon.com");
+                return;
+            }
+
+            // after checking that the list exists create the DB
+            let listDB = new DataStore({filename: '' + listDBPath, autoload: true});
+            // just in case the database didn't load
+            listDB.loadDatabase();
+
+            listDB.find({}, function (listErr, listDocs) {
+                let listInfo = listDocs[0];
+
+                // TODO: add a better way to do this. Since there are multiple threads happening
+                //  at the same time and the only way to tell which is which is placement
+                importantInfo[importantInfo.length] = listName;
+                importantInfo[importantInfo.length] = listInfo.prompt;
+                finished++;
+
+                if (finished === openLists.length) {
+                    response.send(importantInfo);
+                    response.end();
+                }
+            })
+        }
+    })
 });
 
 // -------------------------------------- //
