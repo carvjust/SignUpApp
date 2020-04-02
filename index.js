@@ -195,9 +195,10 @@ app.get('/:site/getAllListNames', (request, response) => {
     })
 });
 
+// this will load the prompts for all lists in a specific site
 app.get('/:site/loadListsWithPrompt', (request, response) => {
 
-// create vars
+    // create vars
     const site = request.params.site;
     const sitePath = "api/"+site;
     const siteDBPath = sitePath+"/"+site+".db";
