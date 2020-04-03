@@ -1,7 +1,8 @@
 let badge = document.getElementById("badge");
 let comment = document.getElementById("comment");
 let selector = document.getElementById("selector");
-let prompts = [];
+let prompts = {};
+let listNames = [];
 let site;
 
 async function loadLists() {
@@ -18,18 +19,22 @@ async function loadLists() {
     const response = await fetch(url, options);
     const lists = JSON.parse(await response.text());
 
-    for (let i=0; i<lists.length; i++) {
-        if (i%2 === 0) {
-            let list = lists[i];
-            let newOption = document.createElement("option");
-            newOption.setAttribute("value", "" + list);
-            newOption.innerHTML = list;
-            document.getElementById("selector").appendChild(newOption);
-        } else {
-            prompts[prompts.length] = lists[i];
-        }
+    for (const [key, value] of Object.entries(lists)) {
+        listNames[listNames.length] = key;
+        console.log(key, value);
     }
-    loadPlaceholder()
+
+    prompts = lists;
+    listNames.sort();
+
+    for (let i=0; i<listNames.length; i++) {
+        let list = listNames[i];
+        let newOption = document.createElement("option");
+        newOption.setAttribute("value", "" + list);
+        newOption.innerHTML = list;
+        document.getElementById("selector").appendChild(newOption);
+    }
+    loadPlaceholder();
 }
 
 function clear() {
@@ -68,6 +73,6 @@ async function submit() {
 }
 
 function loadPlaceholder() {
-    // TODO: change this to grab from API and update placeholder with prompt
-    comment.placeholder = prompts[selector.selectedIndex];
+    let key = listNames[selector.selectedIndex];
+    comment.placeholder = prompts[key];
 }

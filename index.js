@@ -118,6 +118,8 @@ app.get('/sites', (request, response) => {
         let apiInfo = docs[0];
         let sites = apiInfo.sites;
 
+        sites.sort();
+
         response.send(sites);
         response.end();
     })
@@ -219,7 +221,7 @@ app.get('/:site/loadListsWithPrompt', (request, response) => {
     siteDB.find({}, function (err, docs) {
         let siteInfo = docs[0];
         let openLists = siteInfo.openLists;
-        let importantInfo = [];
+        let importantInfo = {};
         let finished = 0;
 
         for (let i=0; i<openLists.length; i++) {
@@ -243,10 +245,7 @@ app.get('/:site/loadListsWithPrompt', (request, response) => {
             listDB.find({}, function (listErr, listDocs) {
                 let listInfo = listDocs[0];
 
-                // TODO: add a better way to do this. Since there are multiple threads happening
-                //  at the same time and the only way to tell which is which is placement
-                importantInfo[importantInfo.length] = listName;
-                importantInfo[importantInfo.length] = listInfo.prompt;
+                importantInfo[listName] = listInfo.prompt;
                 finished++;
 
                 if (finished === openLists.length) {
